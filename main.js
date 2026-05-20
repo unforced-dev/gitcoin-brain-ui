@@ -293,7 +293,7 @@
     try {
       const draftNotes = await fetchNotes({ tag: 'daily-draft', limit: 5, sort: 'desc' });
       const drafts = draftNotes
-        .filter(n => n.path && n.path.startsWith('derives/daily-tweets/'))
+        .filter(n => n.path && n.path.startsWith('jobs/runs/daily-tweet-drafts/'))
         .sort((a, b) => (b.path || '').localeCompare(a.path || ''));
       if (drafts[0]) {
         const target = drafts[0];
@@ -493,7 +493,7 @@
       // grab the most recent daily-tweets note
       const notes = await fetchNotes({ tag: 'daily-draft', limit: 30, sort: 'desc' });
       const drafts = notes
-        .filter(n => n.path && n.path.startsWith('derives/daily-tweets/'))
+        .filter(n => n.path && n.path.startsWith('jobs/runs/daily-tweet-drafts/'))
         .sort((a, b) => (b.path || '').localeCompare(a.path || ''));
       const target = drafts[0];
       if (!target) {
