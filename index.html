@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gitcoin Brain</title>
+<meta name="description" content="The Gitcoin team's working knowledge base, browseable." />
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+</head>
+<body>
+
+<!-- token modal — shown on first visit / when token is missing -->
+<div class="token-modal-overlay" id="token-modal">
+  <div class="token-modal">
+    <h2>welcome to the gitcoin brain.</h2>
+    <p>To connect, paste your vault token below. Your token stays in your browser — it never leaves this page.</p>
+    <label class="smcaps" style="display:block; margin-bottom:0.4rem;">vault url</label>
+    <input type="text" id="token-url-input" class="token-url" value="http://127.0.0.1:1940" />
+    <label class="smcaps" style="display:block; margin-top:0.75rem; margin-bottom:0.4rem;">token</label>
+    <input type="password" id="token-input" placeholder="pvt_..." autocomplete="off" />
+    <div class="token-err" id="token-err">Couldn't reach the vault with that token. Check the URL + token.</div>
+    <div class="hint">Don't have a token? Ask Aaron — he'll mint one with read-only scope.</div>
+    <div class="token-actions">
+      <button class="primary" id="token-submit">connect</button>
+      <button class="secondary" id="token-cancel" style="display:none;">cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- app shell -->
+<div class="app">
+
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="brand" onclick="window.location.hash=''; ">
+      <span class="mark">The Gitcoin Brain</span>
+      <span class="sub">· Reading Room</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <input class="search-input" id="search-input" type="text" placeholder="full-text search…" />
+      </div>
+      <div class="token-indicator" id="token-indicator" onclick="GB.openTokenModal()">
+        <span class="dot"></span>
+        <span class="status-label">disconnected</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h5>sections</h5>
+      <div class="sidebar-link" data-route="#/">
+        <span class="name">Home</span>
+      </div>
+      <div class="sidebar-link" data-route="#/today">
+        <span class="name">Today's brief</span>
+      </div>
+      <div class="sidebar-link" data-route="#/recent">
+        <span class="name">Recent activity</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h5>collections</h5>
+      <div id="tag-list">
+        <!-- filled by main.js -->
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h5>about</h5>
+      <div class="sidebar-link" data-route="#/mcp">
+        <span class="name">Plug into your AI</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- main reading area -->
+  <main class="main">
+    <div class="view" id="view">
+      <div class="loading">loading…</div>
+    </div>
+  </main>
+
+  <footer>
+    <div>Gitcoin Brain · vault projection · updated nightly</div>
+    <div>Built on <a href="https://parachute.computer" class="link" target="_blank" rel="noopener">Parachute</a></div>
+  </footer>
+
+</div>
+
+<!-- view templates rendered by main.js -->
+<script src="main.js" defer></script>
+
+</body>
+</html>
