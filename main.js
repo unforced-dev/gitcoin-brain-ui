@@ -255,6 +255,9 @@
       })
     );
 
+    // surface today's drafts prominently if they exist
+    const todaysDraftsTeaser = h('div', { id: 'drafts-teaser', style: 'margin: 2.5rem 0;' });
+
     const tagGrid = h('div', { class: 'tag-grid' });
     for (const tag of TAG_ORDER) {
       const count = state.tagCounts[tag] || 0;
@@ -284,7 +287,36 @@
 
     const mcp = renderMcpBlock(true);
 
-    renderView([hero, tagGrid, ornament, recentTitle, recentList, mcp]);
+    renderView([hero, todaysDraftsTeaser, tagGrid, ornament, recentTitle, recentList, mcp]);
+
+    // load today's drafts teaser
+    try {
+      const draftNotes = await fetchNotes({ tag: 'daily-draft', limit: 5, sort: 'desc' });
+      const drafts = draftNotes
+        .filter(n => n.path && n.path.startsWith('derives/daily-tweets/'))
+        .sort((a, b) => (b.path || '').localeCompare(a.path || ''));
+      if (drafts[0]) {
+        const target = drafts[0];
+        const datePart = (target.path || '').split('/').pop();
+        const teaser = h('div', {
+          style: 'border-left:3px solid var(--gold); padding:1.25rem 1.5rem; background:var(--bg-soft); cursor:pointer;',
+          onclick: () => window.location.hash = '/drafts',
+        },
+          h('div', { class: 'smcaps gold', style: 'margin-bottom:0.5rem;' },
+            'today\'s drafts · ' + datePart
+          ),
+          h('h3', { style: 'font-family:var(--display); font-style:italic; font-size:1.4rem; color:var(--ink); margin-bottom:0.45rem;' },
+            'Tweet copy per actionable item.'
+          ),
+          h('p', { style: 'color:var(--ink-soft); font-size:0.95rem; margin-bottom:0;' },
+            target.preview ? target.preview.slice(0, 200) + (target.preview.length > 200 ? '…' : '') : 'pre-drafted tweets ready for review and editing.'
+          )
+        );
+        $('#drafts-teaser').appendChild(teaser);
+      }
+    } catch (e) {
+      // silent failure on teaser — non-critical
+    }
 
     // load recent
     try {
@@ -435,6 +467,47 @@
         return;
       }
       // fetch full content
+      const note = await fetchNote(target.path);
+      body.innerHTML = '';
+      body.appendChild(noteDetailContent(note));
+    } catch (e) {
+      body.innerHTML = '';
+      body.appendChild(errorView(e.message));
+    }
+  };
+
+  // --- TODAY'S DRAFTS (tweet drafts per "Worth acting on" item)
+
+  const renderDrafts = async () => {
+    if (!state.connected) return renderHome();
+
+    const head = h('div', { class: 'section-head' },
+      h('h2', {}, h('em', {}, 'Today\'s drafts')),
+      h('span', { class: 'meta' }, 'tweet copy per actionable item')
+    );
+
+    const body = h('div', {}, h('div', { class: 'loading' }, 'loading…'));
+    renderView([head, body]);
+
+    try {
+      // grab the most recent daily-tweets note
+      const notes = await fetchNotes({ tag: 'daily-draft', limit: 30, sort: 'desc' });
+      const drafts = notes
+        .filter(n => n.path && n.path.startsWith('derives/daily-tweets/'))
+        .sort((a, b) => (b.path || '').localeCompare(a.path || ''));
+      const target = drafts[0];
+      if (!target) {
+        body.innerHTML = '';
+        body.appendChild(h('div', { class: 'empty' },
+          h('div', { class: 'ornament-large' }, '✦'),
+          h('p', {}, 'no drafts yet.'),
+          h('p', { style: 'font-size:0.92rem; font-style:normal;' },
+            'The tweet-drafter derive (', h('code', {}, 'scripts/derive_daily_tweets.py'),
+            ') runs against today\'s trending.md and writes drafts here when an ',
+            h('code', {}, 'ANTHROPIC_API_KEY'), ' is configured.')
+        ));
+        return;
+      }
       const note = await fetchNote(target.path);
       body.innerHTML = '';
       body.appendChild(noteDetailContent(note));
@@ -675,6 +748,7 @@
   const routes = [
     { match: /^#?\/?$/, render: renderHome },
     { match: /^#\/today\/?$/, render: renderToday },
+    { match: /^#\/drafts\/?$/, render: renderDrafts },
     { match: /^#\/recent\/?$/, render: renderRecent },
     { match: /^#\/mcp\/?$/, render: renderMcpPage },
     { match: /^#\/tag\/(.+)$/, render: (m) => renderTagView(m[1]) },

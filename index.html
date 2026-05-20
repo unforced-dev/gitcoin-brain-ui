@@ -13,8 +13,8 @@
 <!-- token modal — shown on first visit / when token is missing -->
 <div class="token-modal-overlay" id="token-modal">
   <div class="token-modal">
-    <h2>welcome to the gitcoin brain.</h2>
-    <p>To connect, paste your vault token below. Your token stays in your browser — it never leaves this page.</p>
+    <h2>link your vault.</h2>
+    <p>To open the Gitcoin Brain, link a parachute vault. <em>Multi-user accounts are landing in Parachute soon</em> — until then, paste your vault URL and token below. Both stay in your browser via localStorage; nothing leaves the page.</p>
     <label class="smcaps" style="display:block; margin-bottom:0.4rem;">vault url</label>
     <input type="text" id="token-url-input" class="token-url" value="http://127.0.0.1:1940" />
     <label class="smcaps" style="display:block; margin-top:0.75rem; margin-bottom:0.4rem;">token</label>
@@ -22,7 +22,7 @@
     <div class="token-err" id="token-err">Couldn't reach the vault with that token. Check the URL + token.</div>
     <div class="hint">Don't have a token? Ask Aaron — he'll mint one with read-only scope.</div>
     <div class="token-actions">
-      <button class="primary" id="token-submit">connect</button>
+      <button class="primary" id="token-submit">link vault</button>
       <button class="secondary" id="token-cancel" style="display:none;">cancel</button>
     </div>
   </div>
@@ -57,6 +57,9 @@
       </div>
       <div class="sidebar-link" data-route="#/today">
         <span class="name">Today's brief</span>
+      </div>
+      <div class="sidebar-link" data-route="#/drafts">
+        <span class="name">Today's drafts</span>
       </div>
       <div class="sidebar-link" data-route="#/recent">
         <span class="name">Recent activity</span>
