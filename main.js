@@ -119,7 +119,12 @@
     $('#token-input').value = state.token || '';
     $('#token-url-input').value = state.url;
     $('#token-cancel').style.display = state.connected ? 'inline-block' : 'none';
-    setTimeout(() => $('#token-input').focus(), 50);
+    // Default to the OAuth ("sign in") affordance; paste-token stays
+    // available behind a toggle for cases without a hub origin.
+    $('#token-paste-section').style.display = 'none';
+    $('#token-submit').style.display = 'none';
+    $('#oauth-submit').style.display = 'inline-block';
+    setTimeout(() => $('#token-url-input').focus(), 50);
   };
 
   const closeTokenModal = () => {
@@ -787,6 +792,61 @@
   // ---- Setup
 
   const setupTokenModal = () => {
+    // OAuth (default primary) — kicks the browser over to the vault's
+    // consent page. Returns here with ?code=...&state=... which init() picks
+    // up and completes via handleOAuthCallback.
+    $('#oauth-submit').addEventListener('click', async () => {
+      const raw = $('#token-url-input').value.trim().replace(/\/$/, '');
+      if (!raw) {
+        $('#token-err').textContent = 'Enter a vault URL first.';
+        $('#token-err').classList.add('shown');
+        return;
+      }
+      // Vault OAuth discovery lives under /vault/<name>/.well-known/...
+      // Accept either form from the user: a bare host (auto-append the vault
+      // name) or the full /vault/<name> URL (use as-is).
+      const issuer = raw.endsWith(`/vault/${VAULT_NAME}`)
+        ? raw
+        : `${raw}/vault/${VAULT_NAME}`;
+      // Persist the host portion in state.url so the rest of the app's API
+      // path-building (which appends /vault/<name>/api itself) keeps working.
+      const host = issuer.replace(new RegExp(`/vault/${VAULT_NAME}$`), '');
+      state.url = host;
+      localStorage.setItem(STORAGE_PREFIX + 'url', host);
+      try {
+        $('#token-err').classList.remove('shown');
+        $('#oauth-submit').disabled = true;
+        $('#oauth-submit').textContent = 'redirecting…';
+        await window.GBOAuth.beginOAuth(issuer);
+        // beginOAuth navigates away; nothing more to do.
+      } catch (e) {
+        $('#oauth-submit').disabled = false;
+        $('#oauth-submit').textContent = 'sign in';
+        $('#token-err').textContent = e.message || 'Sign-in failed.';
+        $('#token-err').classList.add('shown');
+      }
+    });
+
+    // Paste-token fallback — reveals the token field + swaps the primary
+    // button.
+    $('#token-paste-toggle').addEventListener('click', (e) => {
+      e.preventDefault();
+      const paste = $('#token-paste-section');
+      const isShown = paste.style.display !== 'none';
+      if (isShown) {
+        paste.style.display = 'none';
+        $('#oauth-submit').style.display = 'inline-block';
+        $('#token-submit').style.display = 'none';
+        $('#token-paste-toggle').textContent = 'Paste one instead';
+      } else {
+        paste.style.display = 'block';
+        $('#oauth-submit').style.display = 'none';
+        $('#token-submit').style.display = 'inline-block';
+        $('#token-paste-toggle').textContent = 'Sign in with OAuth instead';
+        setTimeout(() => $('#token-input').focus(), 50);
+      }
+    });
+
     $('#token-submit').addEventListener('click', async () => {
       const newToken = $('#token-input').value.trim();
       const newUrl = $('#token-url-input').value.trim().replace(/\/$/, '');
@@ -805,6 +865,67 @@
     $('#token-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') $('#token-submit').click();
     });
+    $('#token-url-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // Enter on the URL field defaults to whichever primary is shown.
+        const primary = $('#oauth-submit').style.display !== 'none' ? '#oauth-submit' : '#token-submit';
+        $(primary).click();
+      }
+    });
+  };
+
+  // Called from init() when the page loads with ?code=...&state=... in the URL
+  // (the vault has just redirected us back from its consent page).
+  const handleOAuthCallback = async (cb) => {
+    try {
+      // Tell the user something is happening — the exchange takes ~200ms but
+      // a bare loading… screen is jarring.
+      renderView(h('div', { class: 'loading' }, 'completing sign-in…'));
+      const { token } = await window.GBOAuth.completeOAuth(cb.code, cb.state);
+      // Store. token.access_token is a pvt_* — same shape as paste-flow.
+      // Persist scope + vault + iss for display + future refresh logic.
+      state.token = token.access_token;
+      // The token response tells us which vault we're connected to and the
+      // service URL. Prefer it over whatever the user typed into the modal.
+      if (token.services?.vault?.url) {
+        // services.vault.url is the full vault URL including /vault/<name>;
+        // strip the /vault/<name> suffix to recover the origin base.
+        const m = String(token.services.vault.url).match(/^(.*?)\/vault\/[^/]+\/?$/);
+        if (m) state.url = m[1];
+      }
+      state.oauth = {
+        scope: token.scope,
+        vault: token.vault,
+        iss: token.iss,
+        connectedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_PREFIX + 'token', state.token);
+      localStorage.setItem(STORAGE_PREFIX + 'url', state.url);
+      localStorage.setItem(STORAGE_PREFIX + 'oauth', JSON.stringify(state.oauth));
+      // Strip ?code/?state from the URL so a refresh doesn't try to re-exchange.
+      window.GBOAuth.cleanCallbackFromUrl();
+      closeTokenModal();
+      await tryConnect();
+      route();
+    } catch (e) {
+      window.GBOAuth.cleanCallbackFromUrl();
+      // Surface the error in the modal rather than a blank screen.
+      openTokenModal();
+      $('#token-err').textContent = e.message || 'Sign-in could not complete.';
+      $('#token-err').classList.add('shown');
+      if (e.approveUrl) {
+        const hint = $('#token-hint');
+        hint.innerHTML = '';
+        hint.appendChild(document.createTextNode('Your hub admin needs to approve this app. '));
+        const a = document.createElement('a');
+        a.href = e.approveUrl;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.className = 'link';
+        a.textContent = 'Open approval page';
+        hint.appendChild(a);
+      }
+    }
   };
 
   const setupSearch = () => {
@@ -843,6 +964,28 @@
     setTokenIndicator();
 
     window.addEventListener('hashchange', route);
+
+    // If the vault just redirected us back with ?code=...&state=..., finish
+    // the OAuth exchange before doing anything else.
+    const cb = window.GBOAuth && window.GBOAuth.detectCallback();
+    if (cb && cb.error) {
+      window.GBOAuth.cleanCallbackFromUrl();
+      openTokenModal();
+      $('#token-err').textContent = `Sign-in cancelled: ${cb.description || cb.error}`;
+      $('#token-err').classList.add('shown');
+      route();
+      return;
+    }
+    if (cb && cb.code) {
+      await handleOAuthCallback(cb);
+      return;
+    }
+
+    // Restore the cached OAuth context for display purposes.
+    try {
+      const raw = localStorage.getItem(STORAGE_PREFIX + 'oauth');
+      if (raw) state.oauth = JSON.parse(raw);
+    } catch {}
 
     if (state.token) {
       await tryConnect();

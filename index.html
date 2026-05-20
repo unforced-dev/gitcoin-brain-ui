@@ -7,6 +7,7 @@
 <meta name="description" content="The Gitcoin team's working knowledge base, browseable." />
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+<script src="oauth.js" defer></script>
 </head>
 <body>
 
@@ -14,15 +15,23 @@
 <div class="token-modal-overlay" id="token-modal">
   <div class="token-modal">
     <h2>link your vault.</h2>
-    <p>To open the Gitcoin Brain, link a parachute vault. <em>Multi-user accounts are landing in Parachute soon</em> — until then, paste your vault URL and token below. Both stay in your browser via localStorage; nothing leaves the page.</p>
+    <p>To open the Gitcoin Brain, sign in to your parachute vault. Your tokens stay in this browser — nothing leaves the page.</p>
+
     <label class="smcaps" style="display:block; margin-bottom:0.4rem;">vault url</label>
-    <input type="text" id="token-url-input" class="token-url" value="http://127.0.0.1:1940" />
-    <label class="smcaps" style="display:block; margin-top:0.75rem; margin-bottom:0.4rem;">token</label>
-    <input type="password" id="token-input" placeholder="pvt_..." autocomplete="off" />
+    <input type="text" id="token-url-input" class="token-url" placeholder="https://your-vault.example" value="http://127.0.0.1:1940" />
+
+    <!-- paste-token fallback, hidden by default -->
+    <div id="token-paste-section" style="display:none; margin-top:0.75rem;">
+      <label class="smcaps" style="display:block; margin-bottom:0.4rem;">token</label>
+      <input type="password" id="token-input" placeholder="pvt_..." autocomplete="off" />
+    </div>
+
     <div class="token-err" id="token-err">Couldn't reach the vault with that token. Check the URL + token.</div>
-    <div class="hint">Don't have a token? Ask Aaron — he'll mint one with read-only scope.</div>
+    <div class="hint" id="token-hint">Click sign in — the vault's consent page will open. Already have a token? <a href="#" id="token-paste-toggle" class="link">Paste one instead</a>.</div>
+
     <div class="token-actions">
-      <button class="primary" id="token-submit">link vault</button>
+      <button class="primary" id="oauth-submit">sign in</button>
+      <button class="primary" id="token-submit" style="display:none;">link with token</button>
       <button class="secondary" id="token-cancel" style="display:none;">cancel</button>
     </div>
   </div>
