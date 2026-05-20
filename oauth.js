@@ -88,7 +88,14 @@
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      credentials: 'include',
+      // DCR is unauthenticated by spec — no cookies needed. Using
+      // 'omit' lets the response use Access-Control-Allow-Origin: * (the
+      // hub's default in rc.17), which works for cross-origin SPAs.
+      // parachute-notes uses 'include' for forward-compat with hub-side
+      // auto-approve via session cookies, but that path needs the hub to
+      // echo a specific Origin + Allow-Credentials:true — not the case
+      // for us yet. Switch back if/when same-origin auto-approve lands.
+      credentials: 'omit',
       body: JSON.stringify({
         client_name: 'Gitcoin Brain',
         redirect_uris: [redirect],
