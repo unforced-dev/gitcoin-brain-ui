@@ -8,27 +8,33 @@
 
   // ---- Config
 
-  const VAULT_NAME = 'gitcoin';
+  const DEFAULT_VAULT_NAME = 'gitcoin';
   const STORAGE_PREFIX = 'gb:v1:';
 
-  // tag display names + sidebar order
+  // tag display names + sidebar order. These are the type-tags worth browsing
+  // as collections — not the owner tags (kevin/operations/...), which are
+  // layers, not collections.
   const TAG_DISPLAY = {
-    custom:  { label: 'Strategic Anchors', desc: 'Kevin\'s voice + insights' },
-    owocki:  { label: 'Recent Owocki',     desc: 'rebuild.how artifacts' },
-    daily:   { label: 'Daily Reports',     desc: 'nightly derives' },
-    monthly: { label: 'Monthly Rollups',   desc: '' },
-    draft:   { label: 'Drafts',            desc: 'in-progress writing' },
-    person:  { label: 'People',            desc: 'stakeholders' },
-    gov:     { label: 'Governance',        desc: 'gov.gitcoin.co threads' },
-    giveth:  { label: 'Giveth',            desc: '' },
-    howto:   { label: 'How-To',            desc: '' },
+    anchor:         { label: 'Strategy & Anchors', desc: 'where Kevin\'s head is' },
+    report:         { label: 'Daily Reports',      desc: 'nightly synthesis' },
+    trending:       { label: 'Trending',           desc: 'movement + news scan' },
+    'field-intel':  { label: 'Field Intel',        desc: 'AI-jobs deep trends' },
+    person:         { label: 'People',             desc: 'stakeholder index' },
+    draft:          { label: 'Drafts',             desc: 'in-flight writing' },
+    writing:        { label: 'Writing',            desc: 'Kevin long-form' },
+    weekly:         { label: 'Weekly Rollups',     desc: '' },
+    'grant-report': { label: 'Grants',             desc: 'funding intel' },
+    kpi:            { label: 'KPI Trendlines',     desc: '' },
   };
-  const TAG_ORDER = ['custom', 'owocki', 'daily', 'draft', 'person', 'monthly', 'gov', 'giveth', 'howto'];
+  const TAG_ORDER = ['anchor', 'report', 'trending', 'field-intel', 'person', 'draft', 'writing', 'weekly', 'grant-report', 'kpi'];
 
   // ---- State
 
   const state = {
     url: localStorage.getItem(STORAGE_PREFIX + 'url') || 'http://127.0.0.1:1940',
+    // Vault name is configurable — different deployments mount different vaults
+    // (e.g. /vault/gitcoin locally, /vault/default on a fresh hosted instance).
+    vaultName: localStorage.getItem(STORAGE_PREFIX + 'vault') || DEFAULT_VAULT_NAME,
     token: localStorage.getItem(STORAGE_PREFIX + 'token') || '',
     vaultInfo: null,
     tagCounts: {},
@@ -73,7 +79,7 @@
 
   const api = async (path, opts = {}) => {
     if (!state.token) throw new Error('no token');
-    const url = `${state.url}/vault/${VAULT_NAME}/api${path}`;
+    const url = `${state.url}/vault/${state.vaultName}/api${path}`;
     const r = await fetch(url, {
       ...opts,
       headers: {
@@ -92,7 +98,7 @@
   };
 
   const fetchVaultInfo = async () => {
-    const url = `${state.url}/vault/${VAULT_NAME}`;
+    const url = `${state.url}/vault/${state.vaultName}`;
     const r = await fetch(url, {
       headers: { 'Authorization': `Bearer ${state.token}` },
     });
@@ -118,6 +124,8 @@
     $('#token-modal').classList.add('shown');
     $('#token-input').value = state.token || '';
     $('#token-url-input').value = state.url;
+    const vf = $('#token-vault-input');
+    if (vf) vf.value = state.vaultName;
     $('#token-cancel').style.display = state.connected ? 'inline-block' : 'none';
     // Default to the OAuth ("sign in") affordance; paste-token stays
     // available behind a toggle for cases without a hub origin.
@@ -456,7 +464,7 @@
       const notes = await fetchNotes({ tag: 'daily', limit: 50, sort: 'desc' });
       // sort by date descending — prefer summary.md if present
       const todays = notes
-        .filter(n => n.path && n.path.includes('processed/daily/'))
+        .filter(n => n.path && n.path.includes('/daily/'))
         .sort((a, b) => (b.path || '').localeCompare(a.path || ''));
 
       const summary = todays.find(n => n.path && n.path.endsWith('/summary'));
@@ -572,7 +580,7 @@
   // --- MCP block (used inline on home, or full page on /mcp)
 
   const renderMcpBlock = (asInline) => {
-    const url = `${state.url}/vault/${VAULT_NAME}`;
+    const url = `${state.url}/vault/${state.vaultName}`;
     const block = h('div', { class: 'mcp-block' + (asInline ? '' : ' open') });
 
     const head = h('div', {},
@@ -791,6 +799,17 @@
 
   // ---- Setup
 
+  // Parse a user-entered vault URL into { host, name }. Accepts either a full
+  // `https://host/vault/<name>` URL (extracts both) or a bare host (name comes
+  // from the vault-name field, else current state, else default).
+  const parseHostAndVault = (raw) => {
+    const m = raw.match(/^(.*?)\/vault\/([^/]+)\/?$/);
+    if (m) return { host: m[1].replace(/\/$/, ''), name: m[2] };
+    const field = $('#token-vault-input');
+    const name = (field && field.value.trim()) || state.vaultName || DEFAULT_VAULT_NAME;
+    return { host: raw.replace(/\/$/, ''), name };
+  };
+
   const setupTokenModal = () => {
     // OAuth (default primary) — kicks the browser over to the vault's
     // consent page. Returns here with ?code=...&state=... which init() picks
@@ -802,17 +821,13 @@
         $('#token-err').classList.add('shown');
         return;
       }
-      // Vault OAuth discovery lives under /vault/<name>/.well-known/...
-      // Accept either form from the user: a bare host (auto-append the vault
-      // name) or the full /vault/<name> URL (use as-is).
-      const issuer = raw.endsWith(`/vault/${VAULT_NAME}`)
-        ? raw
-        : `${raw}/vault/${VAULT_NAME}`;
-      // Persist the host portion in state.url so the rest of the app's API
-      // path-building (which appends /vault/<name>/api itself) keeps working.
-      const host = issuer.replace(new RegExp(`/vault/${VAULT_NAME}$`), '');
+      const { host, name } = parseHostAndVault(raw);
       state.url = host;
+      state.vaultName = name;
       localStorage.setItem(STORAGE_PREFIX + 'url', host);
+      localStorage.setItem(STORAGE_PREFIX + 'vault', name);
+      // Vault OAuth discovery lives under /vault/<name>/.well-known/...
+      const issuer = `${host}/vault/${name}`;
       try {
         $('#token-err').classList.remove('shown');
         $('#oauth-submit').disabled = true;
@@ -849,12 +864,15 @@
 
     $('#token-submit').addEventListener('click', async () => {
       const newToken = $('#token-input').value.trim();
-      const newUrl = $('#token-url-input').value.trim().replace(/\/$/, '');
+      const raw = $('#token-url-input').value.trim().replace(/\/$/, '');
       if (!newToken) return;
+      const { host, name } = parseHostAndVault(raw || 'http://127.0.0.1:1940');
       state.token = newToken;
-      state.url = newUrl || 'http://127.0.0.1:1940';
+      state.url = host;
+      state.vaultName = name;
       localStorage.setItem(STORAGE_PREFIX + 'token', state.token);
       localStorage.setItem(STORAGE_PREFIX + 'url', state.url);
+      localStorage.setItem(STORAGE_PREFIX + 'vault', state.vaultName);
       const ok = await tryConnect();
       if (ok) {
         closeTokenModal();
@@ -892,6 +910,12 @@
         // strip the /vault/<name> suffix to recover the origin base.
         const m = String(token.services.vault.url).match(/^(.*?)\/vault\/[^/]+\/?$/);
         if (m) state.url = m[1];
+      }
+      // The token response's `vault` is authoritative — the OAuth flow may have
+      // resolved a different vault than the user typed.
+      if (token.vault) {
+        state.vaultName = token.vault;
+        localStorage.setItem(STORAGE_PREFIX + 'vault', token.vault);
       }
       state.oauth = {
         scope: token.scope,
