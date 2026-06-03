@@ -8,7 +8,8 @@
 
   // ---- Config
 
-  const DEFAULT_VAULT_NAME = 'gitcoin';
+  const DEFAULT_VAULT_NAME = 'default';
+  const DEFAULT_VAULT_URL = 'https://gitcoin-parachute.unforced.dev';
   const STORAGE_PREFIX = 'gb:v1:';
 
   // tag display names + sidebar order. These are the type-tags worth browsing
@@ -31,7 +32,7 @@
   // ---- State
 
   const state = {
-    url: localStorage.getItem(STORAGE_PREFIX + 'url') || 'http://127.0.0.1:1940',
+    url: localStorage.getItem(STORAGE_PREFIX + 'url') || DEFAULT_VAULT_URL,
     // Vault name is configurable — different deployments mount different vaults
     // (e.g. /vault/gitcoin locally, /vault/default on a fresh hosted instance).
     vaultName: localStorage.getItem(STORAGE_PREFIX + 'vault') || DEFAULT_VAULT_NAME,
@@ -866,7 +867,7 @@
       const newToken = $('#token-input').value.trim();
       const raw = $('#token-url-input').value.trim().replace(/\/$/, '');
       if (!newToken) return;
-      const { host, name } = parseHostAndVault(raw || 'http://127.0.0.1:1940');
+      const { host, name } = parseHostAndVault(raw || DEFAULT_VAULT_URL);
       state.token = newToken;
       state.url = host;
       state.vaultName = name;
