@@ -16,18 +16,19 @@
   // as collections — not the owner tags (kevin/operations/...), which are
   // layers, not collections.
   const TAG_DISPLAY = {
-    anchor:         { label: 'Strategy & Anchors', desc: 'where Kevin\'s head is' },
+    initiative:     { label: 'Initiatives',        desc: 'what we\'re building' },
+    anchor:         { label: 'Strategy & Anchors', desc: 'the strategic state' },
     report:         { label: 'Daily Reports',      desc: 'nightly synthesis' },
     trending:       { label: 'Trending',           desc: 'movement + news scan' },
     'field-intel':  { label: 'Field Intel',        desc: 'AI-jobs deep trends' },
     person:         { label: 'People',             desc: 'stakeholder index' },
     draft:          { label: 'Drafts',             desc: 'in-flight writing' },
-    writing:        { label: 'Writing',            desc: 'Kevin long-form' },
+    writing:        { label: 'Writing',            desc: 'long-form' },
     weekly:         { label: 'Weekly Rollups',     desc: '' },
     'grant-report': { label: 'Grants',             desc: 'funding intel' },
     kpi:            { label: 'KPI Trendlines',     desc: '' },
   };
-  const TAG_ORDER = ['anchor', 'report', 'trending', 'field-intel', 'person', 'draft', 'writing', 'weekly', 'grant-report', 'kpi'];
+  const TAG_ORDER = ['initiative', 'anchor', 'report', 'trending', 'field-intel', 'person', 'draft', 'writing', 'weekly', 'grant-report', 'kpi'];
 
   // ---- State
 
@@ -261,11 +262,11 @@
 
     const hero = h('div', { class: 'hero' },
       h('div', { class: 'eyebrow' }, 'the gitcoin brain'),
-      h('h1', {}, 'A working knowledge base.'),
+      h('h1', {}, 'The team\'s shared brain.'),
       h('p', { class: 'lede',
-        html: 'A scrubbed mirror of Kevin\'s Gitcoin context, plus team work. ' +
-              'Browse the collections below, search anything, or <em>plug it into your AI</em> ' +
-              'via MCP. Updated nightly.'
+        html: 'A living center for the work — organized around the <em>initiatives</em> ' +
+              'we\'re building, fed by everyone\'s context. Browse it here, or ' +
+              '<em>plug it into your own AI</em> and just ask.'
       })
     );
 
