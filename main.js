@@ -17,6 +17,7 @@
   // layers, not collections.
   const TAG_DISPLAY = {
     initiative:     { label: 'Initiatives',        desc: 'what we\'re building' },
+    meeting:        { label: 'Meetings',           desc: 'working groups + 1:1s, linked to people' },
     anchor:         { label: 'Strategy & Anchors', desc: 'the strategic state' },
     report:         { label: 'Daily Reports',      desc: 'nightly synthesis' },
     trending:       { label: 'Trending',           desc: 'movement + news scan' },
@@ -28,7 +29,7 @@
     'grant-report': { label: 'Grants',             desc: 'funding intel' },
     kpi:            { label: 'KPI Trendlines',     desc: '' },
   };
-  const TAG_ORDER = ['initiative', 'anchor', 'report', 'trending', 'field-intel', 'person', 'draft', 'writing', 'weekly', 'grant-report', 'kpi'];
+  const TAG_ORDER = ['initiative', 'meeting', 'anchor', 'report', 'trending', 'field-intel', 'person', 'draft', 'writing', 'weekly', 'grant-report', 'kpi'];
 
   // ---- State
 
