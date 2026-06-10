@@ -1,115 +1,19 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Gitcoin Brain</title>
-<meta name="description" content="The Gitcoin team's working knowledge base, browseable." />
-<link rel="stylesheet" href="style.css" />
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
-<script src="oauth.js" defer></script>
-</head>
-<body>
-
-<!-- token modal — shown on first visit / when token is missing -->
-<div class="token-modal-overlay" id="token-modal">
-  <div class="token-modal">
-    <h2>link your vault.</h2>
-    <p>To open the Gitcoin Brain, sign in to your parachute vault. Your tokens stay in this browser — nothing leaves the page.</p>
-
-    <label class="smcaps" style="display:block; margin-bottom:0.4rem;">vault url</label>
-    <input type="text" id="token-url-input" class="token-url" placeholder="https://your-vault.example" value="https://gitcoin-parachute.unforced.dev" />
-
-    <label class="smcaps" style="display:block; margin-top:0.75rem; margin-bottom:0.4rem;">vault name</label>
-    <input type="text" id="token-vault-input" class="token-url" placeholder="default" value="default" />
-    <div class="hint" style="margin-top:0.3rem;">The vault mounted at <code>/vault/&lt;name&gt;</code> (e.g. <code>gitcoin</code> or <code>default</code>). Ignored if you paste a full <code>…/vault/&lt;name&gt;</code> URL above.</div>
-
-    <!-- paste-token fallback, hidden by default -->
-    <div id="token-paste-section" style="display:none; margin-top:0.75rem;">
-      <label class="smcaps" style="display:block; margin-bottom:0.4rem;">token</label>
-      <input type="password" id="token-input" placeholder="pvt_..." autocomplete="off" />
-    </div>
-
-    <div class="token-err" id="token-err">Couldn't reach the vault with that token. Check the URL + token.</div>
-    <div class="hint" id="token-hint">Click sign in — the vault's consent page will open. Already have a token? <a href="#" id="token-paste-toggle" class="link">Paste one instead</a>.</div>
-
-    <div class="token-actions">
-      <button class="primary" id="oauth-submit">sign in</button>
-      <button class="primary" id="token-submit" style="display:none;">link with token</button>
-      <button class="secondary" id="token-cancel" style="display:none;">cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- app shell -->
-<div class="app">
-
-  <!-- top bar -->
-  <header class="topbar">
-    <div class="brand" onclick="window.location.hash=''; ">
-      <span class="mark">The Gitcoin Brain</span>
-      <span class="sub">· Reading Room</span>
-    </div>
-    <div class="topbar-actions">
-      <div class="search-wrap">
-        <input class="search-input" id="search-input" type="text" placeholder="full-text search…" />
-      </div>
-      <div class="token-indicator" id="token-indicator" onclick="GB.openTokenModal()">
-        <span class="dot"></span>
-        <span class="status-label">disconnected</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <h5>sections</h5>
-      <div class="sidebar-link" data-route="#/">
-        <span class="name">Home</span>
-      </div>
-      <div class="sidebar-link" data-route="#/today">
-        <span class="name">Today's brief</span>
-      </div>
-      <div class="sidebar-link" data-route="#/drafts">
-        <span class="name">Today's drafts</span>
-      </div>
-      <div class="sidebar-link" data-route="#/recent">
-        <span class="name">Recent activity</span>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <h5>collections</h5>
-      <div id="tag-list">
-        <!-- filled by main.js -->
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <h5>about</h5>
-      <div class="sidebar-link" data-route="#/mcp">
-        <span class="name">Plug into your AI</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- main reading area -->
-  <main class="main">
-    <div class="view" id="view">
-      <div class="loading">loading…</div>
-    </div>
-  </main>
-
-  <footer>
-    <div>Gitcoin Brain · vault projection · updated nightly</div>
-    <div>Built on <a href="https://parachute.computer" class="link" target="_blank" rel="noopener">Parachute</a></div>
-  </footer>
-
-</div>
-
-<!-- view templates rendered by main.js -->
-<script src="main.js" defer></script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>the gitcoin brain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='%230e6b54'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

@@ -1,51 +1,56 @@
-# gitcoin-brain-ui
+# the gitcoin brain — UI
 
-A reading-room interface for the Gitcoin team's working knowledge base.
+A reading-room surface over the **Gitcoin team's shared Parachute brain**
+(`gitcoin-parachute.unforced.dev`, vault `default`). Read-first: today, the
+initiatives, the meetings (with verbatim transcripts), the decisions, and the
+people graph.
 
-This is a static single-page web app that talks to a [parachute-vault](https://parachute.computer) instance over its REST + MCP surfaces. It's the team's primary way to browse, search, and stay on top of what's in the brain.
-
-## Live
-
-Hosted at **https://unforced-dev.github.io/gitcoin-brain-ui/** (once Pages is up).
-
-The vault itself lives behind a separate URL — set when you link it.
-
-## Connecting
-
-First visit: paste your vault URL + token. Both stay in your browser via localStorage; they never leave the page.
-
-Once the multi-user flow lands in Parachute, the connection step becomes a real "Link your vault" OAuth flow. The token-paste mode persists as a developer fallback.
-
-## What's inside the brain right now
-
-- **Strategic Anchors** — Kevin's voice rules, strategic insights, telos
-- **Recent Owocki** — May 2026 rebuild.how artifacts
-- **Daily Reports** — derived nightly from the source mirror
-- **Drafts** — content in progress
-- **People** — Gitcoin-relevant stakeholders
-- **Monthly Rollups**
-- **Governance** — gov.gitcoin.co Discourse threads
-- **Giveth + How-To** — small auxiliary collections
-
-Plus team-derived content (tweet drafts, KPI rollups, etc.) once those derives land.
+This is the v2 UI — a lean React SPA on the published `@openparachute/surface-*`
+packages, replacing the hand-rolled vanilla `brain_ui`. Same vault, real
+entity-typed views, the same OAuth (DCR + PKCE) sign-in.
 
 ## Stack
 
-Pure vanilla — single `index.html`, `style.css`, `main.js`. No framework. Uses `marked.js` (CDN) for note body rendering. Aesthetic: editorial/library, warm cream + weathered gold, Cormorant Garamond italic display + Spectral body.
+- React 19 + Vite + TypeScript, React Router
+- `@openparachute/surface-client` — OAuth against the Parachute hub + the one
+  resilient `VaultClient` (cold-load client_id seeding + single-flight refresh,
+  pattern from parachute-brain / games-coop)
+- `@openparachute/surface-render` — `NoteRenderer` for markdown, wikilinks,
+  auth'd media
 
-Hash-based routing. No server-side anything; this is a static reading layer on top of the vault REST API.
+## Run
 
-## Local dev
-
-```sh
-git clone git@github.com:unforced-dev/gitcoin-brain-ui.git
-cd gitcoin-brain-ui
-python3 -m http.server 8000
-# open http://localhost:8000
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # tsc + production build to dist/
 ```
 
-For talking to a local vault: parachute-vault on `http://127.0.0.1:1940` is the default URL the modal suggests.
+Sign in via **Sign in to the vault** — OAuth goes through the hub
+(`gitcoin-parachute.unforced.dev`) and back to `/oauth/callback`.
 
-## License
+## Views
 
-MIT
+`Today` · `Initiatives` · `Meetings` · `Decisions` · `People` · `NoteView` —
+plus `Connect` / `OAuthCallback`. The brain's spine these read:
+
+- `initiative` — what's being built (status, contributors, summary).
+- `meeting` (`held_on`, `participants`, `platform`); the verbatim is at
+  `meetings/<date>_<slug>/transcript` (`transcript`).
+- `decision` (`held_on`, `decided_by`, `decision_count`/`action_count`) — woven
+  from the meetings, linked back to their source call + the owners' people.
+- `person` — the stakeholder graph (`kevin/people/*`); meeting participants link
+  here.
+- `report` — Kevin's daily briefs (the source flow under `kevin/`).
+
+The graph is the point: meetings ↔ people ↔ initiatives are linked, so a note's
+wikilinks navigate the whole web.
+
+## Deploy
+
+GitHub Pages project site at `/gitcoin-brain-ui/` (see `vite.config.ts` base +
+`public/404.html` SPA fallback). The included Action builds + publishes `dist/`
+on push to `main`; set **Settings → Pages → Source: GitHub Actions**.
+
+The primary interface is each teammate's own Claude over MCP — this UI is the
+browse + steering surface, not the only way in.
